@@ -1,38 +1,68 @@
-name: 自动同步上游仓库
-
-# 触发条件：每天UTC时间0点运行，也可手动触发
+name: Smart Repository Sync 
+ 
 on:
   schedule:
-    - cron: '0 0 * * *'  # 每天凌晨执行
-  workflow_dispatch:     # 允许手动触发
-
+    - cron: '0 0 * * *'  # 每天UTC时间0点运行 
+  workflow_dispatch:     # 允许手动触发 
+ 
 jobs:
-  sync:
-    runs-on: ubuntu-latest
+  check-and-sync:
+    runs-on: ubuntu-latest 
     steps:
-      # 1. 克隆当前Fork仓库
-      - name:  checkout 代码
-        uses: actions/checkout@v4
+      - name: Checkout target repo 
+        uses: actions/checkout@v4 
         with:
-          ref: main  # DODBOY888/PG
-          fetch-depth: 0  # 获取完整历史
-
-      # 2. 添加上游仓库（原仓库地址）
-      - name: 设置上游仓库
+          repository: yjczhou/PG
+          path: target 
+          fetch-depth: 0 
+ 
+      - name: Get source repo info 
+        id: source 
         run: |
-          git remote add upstream https://github.com/fish2018/PG.git  # 替换为上游仓库地址
-          git fetch upstream
-
-      # 3. 合并上游仓库的更改到当前分支
-      - name: 合并上游更改
+          echo "SOURCE_HEAD=$(git ls-remote https://github.com/fish2018/PG  HEAD | cut -f1)" >> $GITHUB_OUTPUT 
+      
+      - name: Get target repo info 
+        id: target 
         run: |
-          git checkout main  # 切换到你的主分支
-          git merge upstream/main  # 合并上游主分支的更改
-
-      # 4. 推送更新到Fork仓库
-      - name: 推送更新
+          cd target 
+          echo "TARGET_HEAD=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT 
+      
+      - name: Compare commits 
+        if: steps.source.outputs.SOURCE_HEAD  != steps.target.outputs.TARGET_HEAD  
         run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git push origin main  # 推送到你的Fork仓库主分支
+          echo "检测到源仓库有更新，开始同步..."
+          # cd target 
+          # # 备份工作流文件
+          # mkdir -p /tmp/workflow_backup
+          # cp -r .github/workflows/ /tmp/workflow_backup/
 
+          # # 强制更新
+          # git config --global user.email "15172206465@163.com"
+          # git config --global user.name "yjczhou"
+          # git remote add upstream https://github.com/fish2018/PG  || true 
+          # git fetch upstream 
+          # git reset --hard upstream/main 
+
+          # # 恢复工作流
+          # mkdir -p .github/workflows/
+          # cp -r /tmp/workflow_backup/workflows/ .github/workflows/
+          # git add .github/workflows/
+          # git commit -m "恢复工作流"
+          
+          # git push --force origin HEAD:main 
+
+          git config --global user.email "15172206465@163.com"
+          git config --global user.name "yjczhou"
+          git clone https://github.com/fish2018/PG  /tmp/source
+          cd target
+          # 同步除工作流外的所有文件 
+          rsync -av --delete --exclude='.github/workflows/' --exclude='.*' --exclude='*/.*' /tmp/source/ .
+          git add .
+          git commit --allow-empty -m "同步远端仓库"
+          git push origin HEAD:main || echo "无变更跳过"
+        
+      - name: No updates 
+        if: steps.source.outputs.SOURCE_HEAD  == steps.target.outputs.TARGET_HEAD  
+        run: |
+          echo "当前时间: $(date)"
+          echo "源仓库没有新的提交，无需同步"
