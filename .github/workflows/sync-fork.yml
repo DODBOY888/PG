@@ -12,7 +12,7 @@ jobs:
       - name: Checkout target repo 
         uses: actions/checkout@v4 
         with:
-          repository: yjczhou/PG
+          repository: DODBOY888/PG
           path: target 
           fetch-depth: 0 
  
@@ -37,8 +37,8 @@ jobs:
           # cp -r .github/workflows/ /tmp/workflow_backup/
 
           # # 强制更新
-          # git config --global user.email "15172206465@163.com"
-          # git config --global user.name "yjczhou"
+          # git config --global user.email "417790940@qq.com"
+          # git config --global user.name "DODBOY888"
           # git remote add upstream https://github.com/fish2018/PG  || true 
           # git fetch upstream 
           # git reset --hard upstream/main 
@@ -51,8 +51,8 @@ jobs:
           
           # git push --force origin HEAD:main 
 
-          git config --global user.email "15172206465@163.com"
-          git config --global user.name "yjczhou"
+          git config --global user.email "417790940@qq.com"
+          git config --global user.name "DODBOY888"
           git clone https://github.com/fish2018/PG  /tmp/source
           cd target
           # 同步除工作流外的所有文件 
